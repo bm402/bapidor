@@ -1,0 +1,15 @@
+plugins {
+    id "java"
+}
+
+group = "com.github.bncrypted.bapidor"
+version = "0.0.1"
+sourceCompatibility = "11"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "net.portswigger.burp.extender:burp-extender-api:2.1"
+}
