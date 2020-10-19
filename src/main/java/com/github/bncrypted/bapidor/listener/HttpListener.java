@@ -1,26 +1,33 @@
 package com.github.bncrypted.bapidor.listener;
 
-import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IHttpListener;
 import burp.IHttpRequestResponse;
 import burp.IRequestInfo;
 
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Arrays;
 
 public class HttpListener implements IHttpListener {
-    private final IBurpExtenderCallbacks callbacks;
+    private final IExtensionHelpers helpers;
+    private final OutputStream stdout;
+    private final OutputStream stderr;
 
-    public HttpListener(IBurpExtenderCallbacks callbacks) {
-        this.callbacks = callbacks;
+    public HttpListener(IExtensionHelpers helpers,
+                        OutputStream stdout,
+                        OutputStream stderr) {
+
+        this.helpers = helpers;
+        this.stdout = stdout;
+        this.stderr = stderr;
     }
 
     public void processHttpMessage(int toolFlag,
                                    boolean messageIsRequest,
                                    IHttpRequestResponse messageInfo) {
 
-        PrintWriter stdout = new PrintWriter(callbacks.getStdout(), true);
+        PrintWriter logger = new PrintWriter(stdout, true);
 
         if (messageIsRequest) {
             StringBuilder logMessage = new StringBuilder();
@@ -29,7 +36,7 @@ public class HttpListener implements IHttpListener {
             logMessage.append(messageInfo.getHttpService());
             logMessage.append("\n");
 
-            IRequestInfo requestInfo = callbacks.getHelpers().analyzeRequest(messageInfo);
+            IRequestInfo requestInfo = helpers.analyzeRequest(messageInfo);
 
             logMessage.append("Method: ");
             logMessage.append(requestInfo.getMethod());
@@ -40,20 +47,18 @@ public class HttpListener implements IHttpListener {
             logMessage.append("\n");
 
             logMessage.append("Parameters:\n");
-            requestInfo.getParameters().stream()
-                    .forEach(param -> {
-                        logMessage.append(param.getType() + ": " + param.getName() + " " + param.getValue() + "\n");
-                    });
-            logMessage.append(requestInfo.getParameters().toString());
+            requestInfo.getParameters().forEach(param ->
+                    logMessage.append(param.getType() + ": " + param.getName() + " " + param.getValue() + "\n"));
             logMessage.append("\n");
 
             int bodyOffset = requestInfo.getBodyOffset();
             byte[] request = messageInfo.getRequest();
+            byte[] body = Arrays.copyOfRange(request, bodyOffset, request.length);
             logMessage.append("Body:\n");
-            logMessage.append(Arrays.copyOfRange(request, bodyOffset, request.length));
+            logMessage.append(new String(body));
             logMessage.append("\n");
 
-            stdout.println(logMessage.toString());
+            logger.println(logMessage.toString());
         }
     }
 }

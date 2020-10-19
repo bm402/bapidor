@@ -62,7 +62,6 @@ public class SuiteTab implements ITab {
 
         layout.linkSize(SwingConstants.HORIZONTAL, activatedBtn, saveBtn);
 
-
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                         .addComponent(baseUriLbl)
@@ -75,43 +74,6 @@ public class SuiteTab implements ITab {
                         .addComponent(lowPrivilegeTokenLbl)
                         .addComponent(lowPrivilegeTokenTf)
                         .addComponent(saveBtn)));
-
-        /*GridBagConstraints constraints = new GridBagConstraints();
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(10, 10, 10, 10);
-        constraints.gridwidth = 400;
-
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        mainPnl.add(baseUriLbl, constraints);
-
-        constraints.gridx = 1;
-        constraints.gridy = 0;
-        mainPnl.add(baseUriTf, constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        mainPnl.add(highPrivilegeTokenLbl, constraints);
-
-        constraints.gridx = 1;
-        constraints.gridy = 1;
-        mainPnl.add(highPrivilegeTokenTf, constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 2;
-        mainPnl.add(lowPrivilegeTokenLbl, constraints);
-
-        constraints.gridx = 1;
-        constraints.gridy = 2;
-        mainPnl.add(lowPrivilegeTokenTf, constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 3;
-        mainPnl.add(activatedBtn, constraints);
-
-        constraints.gridx = 1;
-        constraints.gridy = 3;
-        mainPnl.add(saveBtn, constraints);*/
 
         return mainPnl;
     }
