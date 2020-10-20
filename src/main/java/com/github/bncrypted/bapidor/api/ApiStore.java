@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 public enum ApiStore {
@@ -25,10 +26,13 @@ public enum ApiStore {
     private Map<String, Vars> vars;
     private Map<String, EndpointDetails> endpoints;
 
+    private final AtomicInteger varId;
+
     ApiStore() {
         isListening = false;
         vars = new HashMap<>();
         endpoints = new HashMap<>();
+        varId = new AtomicInteger(0);
     }
 
     public void addEndpointDetails(String endpointCode, EndpointDetails endpointDetails) {
@@ -39,6 +43,10 @@ public enum ApiStore {
         } else {
             endpoints.put(endpointCode, endpointDetails);
         }
+    }
+
+    public String getNextVarId() {
+        return "var" + varId.getAndIncrement();
     }
 
     public void reset() {
