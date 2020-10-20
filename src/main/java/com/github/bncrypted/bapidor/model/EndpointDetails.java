@@ -13,6 +13,7 @@ public class EndpointDetails {
     private Map<String, String> headers;
     private Map<String, String> requestParams;
     private Map<String, Object> bodyParams;
+    private final Privilege privilege;
     @Builder.Default
     private boolean isEvaluated = false;
 }

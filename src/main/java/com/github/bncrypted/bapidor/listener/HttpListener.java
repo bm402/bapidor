@@ -4,8 +4,9 @@ import burp.IExtensionHelpers;
 import burp.IHttpListener;
 import burp.IHttpRequestResponse;
 import burp.IRequestInfo;
-import com.github.bncrypted.bapidor.endpoint.EndpointStore;
+import com.github.bncrypted.bapidor.api.ApiStore;
 import com.github.bncrypted.bapidor.model.EndpointDetails;
+import com.github.bncrypted.bapidor.model.Privilege;
 import com.github.bncrypted.bapidor.request.RequestParser;
 
 import java.io.OutputStream;
@@ -16,17 +17,14 @@ import java.util.Map;
 public class HttpListener implements IHttpListener {
     private final IExtensionHelpers helpers;
     private final OutputStream stdout;
-    private final OutputStream stderr;
 
     private final RequestParser requestParser;
 
     public HttpListener(IExtensionHelpers helpers,
-                        OutputStream stdout,
-                        OutputStream stderr) {
+                        OutputStream stdout) {
 
         this.helpers = helpers;
         this.stdout = stdout;
-        this.stderr = stderr;
 
         this.requestParser = new RequestParser();
     }
@@ -35,7 +33,8 @@ public class HttpListener implements IHttpListener {
                                    boolean messageIsRequest,
                                    IHttpRequestResponse messageInfo) {
 
-        if (messageIsRequest) {
+        if (ApiStore.INSTANCE.isListening() && messageIsRequest) {
+            PrintWriter logger = new PrintWriter(stdout, true);
             IRequestInfo requestInfo = helpers.analyzeRequest(messageInfo);
             URL requestUrl = requestInfo.getUrl();
 
@@ -46,19 +45,25 @@ public class HttpListener implements IHttpListener {
             Map<String, Object> bodyParams = requestParser.parseBodyParams(
                     messageInfo.getRequest(), requestInfo.getBodyOffset(), headers.get("Content-Type"));
 
+            Privilege privilege = requestParser.findPrivilege(
+                    headers.get(ApiStore.INSTANCE.getAuthDetails().getHeaderName()));
+            if (privilege == Privilege.NONE) {
+                logger.println("[Skipping] No token found for: " + requestInfo.getHeaders().get(0));
+                return;
+            }
+
             EndpointDetails endpointDetails = EndpointDetails.builder()
                     .method(method)
                     .path(path)
                     .headers(headers)
                     .requestParams(requestParams)
                     .bodyParams(bodyParams)
+                    .privilege(privilege)
                     .build();
 
             String endpointCode = requestParser.getEndpointCode(method, path);
-            EndpointStore.INSTANCE.addEndpointDetailsToStore(endpointCode, endpointDetails);
-
-            PrintWriter logger = new PrintWriter(stdout, true);
-            logger.println("Wrote to store: " + endpointCode);
+            ApiStore.INSTANCE.addEndpointDetails(endpointCode, endpointDetails);
+            logger.println("Wrote to store: " + requestInfo.getHeaders().get(0));
         }
     }
 }

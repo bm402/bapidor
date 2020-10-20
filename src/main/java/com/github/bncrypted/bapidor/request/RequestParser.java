@@ -1,6 +1,8 @@
 package com.github.bncrypted.bapidor.request;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.bncrypted.bapidor.api.ApiStore;
+import com.github.bncrypted.bapidor.model.Privilege;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -69,6 +71,18 @@ public class RequestParser {
         }
 
         return bodyParams;
+    }
+
+    public Privilege findPrivilege(String authHeaderValue) {
+        if (authHeaderValue == null) {
+            return Privilege.NONE;
+        }
+        if (authHeaderValue.contains(ApiStore.INSTANCE.getAuthDetails().getHighPrivilegedToken())) {
+            return Privilege.HIGH;
+        } else if (authHeaderValue.contains(ApiStore.INSTANCE.getAuthDetails().getLowPrivilegedToken())) {
+            return Privilege.LOW;
+        }
+        return Privilege.NONE;
     }
 
     @SuppressWarnings("unchecked")
