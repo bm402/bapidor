@@ -75,4 +75,15 @@ public class RequestParserTest {
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
+
+    @Test
+    void whenEndpointContainsUsername_thenShouldBeRemoved() {
+        String method = "PATCH";
+        String path = "/user/bncrypted/delete";
+
+        String expectedEndpointCode = "PATCH/user//delete";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
 }

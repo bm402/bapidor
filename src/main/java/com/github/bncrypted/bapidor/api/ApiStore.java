@@ -6,8 +6,14 @@ import com.github.bncrypted.bapidor.model.Vars;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
@@ -27,12 +33,15 @@ public enum ApiStore {
     private Map<String, EndpointDetails> endpoints;
 
     private final AtomicInteger varId;
+    private final Set<String> commonApiObjects;
 
     ApiStore() {
         isListening = false;
         vars = new HashMap<>();
         endpoints = new HashMap<>();
+        commonApiObjects = loadCommonApiObjects();
         varId = new AtomicInteger(0);
+
     }
 
     public void addEndpointDetails(String endpointCode, EndpointDetails endpointDetails) {
@@ -45,6 +54,10 @@ public enum ApiStore {
         }
     }
 
+    public boolean isCommonApiObject(String word) {
+        return commonApiObjects.contains(word);
+    }
+
     public String getNextVarId() {
         return "var" + varId.getAndIncrement();
     }
@@ -54,6 +67,21 @@ public enum ApiStore {
         setAuthDetails(null);
         vars = new HashMap<>();
         endpoints = new HashMap<>();
+    }
+
+    private Set<String> loadCommonApiObjects() {
+        Set<String> apiObjects = new HashSet<>();
+        ClassLoader classLoader = ApiStore.class.getClassLoader();
+        try (InputStream inputStream = classLoader.getResourceAsStream("api-objects.txt")) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            while (reader.ready()) {
+                String apiObject = reader.readLine().toLowerCase();
+                apiObjects.add(apiObject);
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        return apiObjects;
     }
 
     private void evaluateEndpoint() {

@@ -9,15 +9,19 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class RequestParser {
 
     public String getEndpointCode(String endpointMethod, String endpointName) {
-        endpointName = removeUUIDsFromEndpointName(endpointName);
-        endpointName = removeIntegersFromEndpointName(endpointName);
-        return endpointMethod + endpointName;
+        String[] endpointNameComponents = endpointName.split("/");
+        StringBuilder sanitisedEndpointName = new StringBuilder();
+        for (int i = 1; i < endpointNameComponents.length; i++) {
+            sanitisedEndpointName.append("/");
+            if (ApiStore.INSTANCE.isCommonApiObject(endpointNameComponents[i])) {
+                sanitisedEndpointName.append(endpointNameComponents[i]);
+            }
+        }
+        return endpointMethod + sanitisedEndpointName.toString();
     }
 
     public Map<String, String> parseHeaders(List<String> headersList) {
@@ -88,41 +92,5 @@ public class RequestParser {
     @SuppressWarnings("unchecked")
     private Map<String, Object> parseJsonBodyParams(byte[] body) throws IOException {
         return new ObjectMapper().readValue(body, Map.class);
-    }
-
-    private String removeUUIDsFromEndpointName(String endpointName) {
-        StringBuilder endpointNameWithoutUUIDs = new StringBuilder();
-        int stringBuilderStartIndex = 0;
-        int matcherStartIndex = 0;
-
-        Pattern pattern = Pattern.compile("([a-f0-9]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8})",
-                Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(endpointName);
-
-        while (matcher.find(matcherStartIndex)) {
-            int curMatcherIndex = matcher.start();
-            endpointNameWithoutUUIDs.append(
-                    endpointName, stringBuilderStartIndex, curMatcherIndex);
-            stringBuilderStartIndex = curMatcherIndex + 36;
-            matcherStartIndex = curMatcherIndex + 36;
-        }
-
-        if (stringBuilderStartIndex < endpointName.length()) {
-            endpointNameWithoutUUIDs.append(
-                    endpointName, stringBuilderStartIndex, endpointName.length());
-        }
-
-        return endpointNameWithoutUUIDs.toString();
-    }
-
-    private String removeIntegersFromEndpointName(String endpointName) {
-        StringBuilder endpointNameWithoutIntegers = new StringBuilder();
-        for (int i = 0; i < endpointName.length(); i++) {
-            char curChar = endpointName.charAt(i);
-            if (curChar - '0' < 0 || curChar - '0' > 9) {
-                endpointNameWithoutIntegers.append(curChar);
-            }
-        }
-        return endpointNameWithoutIntegers.toString();
     }
 }
