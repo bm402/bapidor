@@ -15,24 +15,36 @@ public class RequestParser {
     public String getEndpointCode(String endpointMethod, String endpointName) {
         String[] endpointNameComponents = endpointName.split("/");
         StringBuilder sanitisedEndpointName = new StringBuilder();
+
         for (int i = 1; i < endpointNameComponents.length; i++) {
             sanitisedEndpointName.append("/");
+
             if (ApiStore.INSTANCE.isCommonApiObject(endpointNameComponents[i])) {
                 sanitisedEndpointName.append(endpointNameComponents[i]);
-            } else if (endpointNameComponents[i].contains(".")) {
-                String[] endpointNameComponentComponents = endpointNameComponents[i].split("\\.");
-                boolean isComponentValid = false;
-                for (String component : endpointNameComponentComponents) {
-                    if (ApiStore.INSTANCE.isCommonApiObject(component)) {
-                        isComponentValid = true;
-                    }
-                }
-                if (isComponentValid) {
-                    sanitisedEndpointName.append(endpointNameComponents[i]);
-                }
+            } else if (endpointNameComponents[i].contains(".") &&
+                    isComponentWithSeparatorValid(endpointNameComponents[i], "\\.")) {
+                sanitisedEndpointName.append(endpointNameComponents[i]);
+            } else if (endpointNameComponents[i].contains("-") &&
+                    isComponentWithSeparatorValid(endpointNameComponents[i], "-")) {
+                sanitisedEndpointName.append(endpointNameComponents[i]);
+            } else if (endpointNameComponents[i].contains("_") &&
+                    isComponentWithSeparatorValid(endpointNameComponents[i], "_")) {
+                sanitisedEndpointName.append(endpointNameComponents[i]);
             }
         }
+
         return endpointMethod + sanitisedEndpointName.toString();
+    }
+
+    private boolean isComponentWithSeparatorValid(String endpointComponent, String separator) {
+        boolean isValid = false;
+        String[] components = endpointComponent.split(separator);
+        for (String component : components) {
+            if (ApiStore.INSTANCE.isCommonApiObject(component)) {
+                isValid = true;
+            }
+        }
+        return isValid;
     }
 
     public Map<String, String> parseHeaders(List<String> headersList) {

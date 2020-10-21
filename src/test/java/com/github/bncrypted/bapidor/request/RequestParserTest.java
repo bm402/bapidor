@@ -97,4 +97,26 @@ public class RequestParserTest {
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
+
+    @Test
+    void whenEndpointContainsObjectWithDashSeparator_thenShouldNotBeRemoved() {
+        String method = "GET";
+        String path = "/component-v1/info";
+
+        String expectedEndpointCode = "GET/component-v1/info";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
+
+    @Test
+    void whenEndpointContainsObjectWithUnderscoreSeparator_thenShouldNotBeRemoved() {
+        String method = "GET";
+        String path = "/component_v1/info";
+
+        String expectedEndpointCode = "GET/component_v1/info";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
 }
