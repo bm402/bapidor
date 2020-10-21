@@ -86,4 +86,15 @@ public class RequestParserTest {
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
+
+    @Test
+    void whenEndpointContainsFilename_thenShouldNotBeRemoved() {
+        String method = "PUT";
+        String path = "/file/bncrypted.json/delete";
+
+        String expectedEndpointCode = "PUT/file/bncrypted.json/delete";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
 }

@@ -55,7 +55,7 @@ public enum ApiStore {
     }
 
     public boolean isCommonApiObject(String word) {
-        return commonApiObjects.contains(word);
+        return commonApiObjects.contains(word.toLowerCase());
     }
 
     public String getNextVarId() {

@@ -19,6 +19,17 @@ public class RequestParser {
             sanitisedEndpointName.append("/");
             if (ApiStore.INSTANCE.isCommonApiObject(endpointNameComponents[i])) {
                 sanitisedEndpointName.append(endpointNameComponents[i]);
+            } else if (endpointNameComponents[i].contains(".")) {
+                String[] endpointNameComponentComponents = endpointNameComponents[i].split("\\.");
+                boolean isComponentValid = false;
+                for (String component : endpointNameComponentComponents) {
+                    if (ApiStore.INSTANCE.isCommonApiObject(component)) {
+                        isComponentValid = true;
+                    }
+                }
+                if (isComponentValid) {
+                    sanitisedEndpointName.append(endpointNameComponents[i]);
+                }
             }
         }
         return endpointMethod + sanitisedEndpointName.toString();
