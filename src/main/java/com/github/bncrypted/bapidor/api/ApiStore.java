@@ -2,7 +2,9 @@ package com.github.bncrypted.bapidor.api;
 
 import com.github.bncrypted.bapidor.model.AuthDetails;
 import com.github.bncrypted.bapidor.model.EndpointDetails;
+import com.github.bncrypted.bapidor.model.Privilege;
 import com.github.bncrypted.bapidor.model.Vars;
+import com.github.bncrypted.bapidor.request.RequestDiffer;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -42,13 +44,18 @@ public class ApiStore {
         varId = new AtomicInteger(0);
     }
 
-    public void addEndpointDetails(String endpointCode, EndpointDetails endpointDetails) {
+    public void addEndpointDetails(String endpointCode, EndpointDetails newEndpointDetails) {
         if (endpoints.containsKey(endpointCode)) {
-            if (!endpoints.get(endpointCode).isEvaluated()) {
-                evaluateEndpoint();
+            EndpointDetails curEndpointDetails = endpoints.get(endpointCode);
+            if (curEndpointDetails.getPrivilege() != newEndpointDetails.getPrivilege() && !curEndpointDetails.isEvaluated()) {
+                if (curEndpointDetails.getPrivilege() == Privilege.HIGH) {
+                    evaluateEndpoint(endpointCode, curEndpointDetails, newEndpointDetails);
+                } else {
+                    evaluateEndpoint(endpointCode, newEndpointDetails, curEndpointDetails);
+                }
             }
         } else {
-            endpoints.put(endpointCode, endpointDetails);
+            endpoints.put(endpointCode, newEndpointDetails);
         }
     }
 
@@ -82,7 +89,33 @@ public class ApiStore {
         return apiObjects;
     }
 
-    private void evaluateEndpoint() {
+    private void evaluateEndpoint(String endpointCode,
+                                  EndpointDetails highPrivilegedEndpointDetails,
+                                  EndpointDetails lowPrivilegedEndpointDetails) {
 
+        RequestDiffer requestDiffer = new RequestDiffer(this);
+        String evaluatedMethod = highPrivilegedEndpointDetails.getMethod();
+        String evaluatedPath = requestDiffer.createPathWithVarIds(highPrivilegedEndpointDetails.getPath(),
+                lowPrivilegedEndpointDetails.getPath());
+        Map<String, String> evaluatedHeaders = requestDiffer.sanitiseHighPrivilegedHeaders(
+                highPrivilegedEndpointDetails.getHeaders());
+        Map<String, String> evaluatedRequestParams = requestDiffer.createRequestParamsWithVarIds(
+                highPrivilegedEndpointDetails.getRequestParams(), lowPrivilegedEndpointDetails.getRequestParams());
+        Map<String, Object> evaluatedBodyParams = requestDiffer.createBodyParamsWithVarIds(
+                highPrivilegedEndpointDetails.getBodyParams(), lowPrivilegedEndpointDetails.getBodyParams());
+
+        EndpointDetails evaluatedEndpointDetails = EndpointDetails.builder()
+                .method(evaluatedMethod)
+                .path(evaluatedPath)
+                .headers(evaluatedHeaders)
+                .requestParams(evaluatedRequestParams)
+                .bodyParams(evaluatedBodyParams)
+                .isEvaluated(true)
+                .build();
+
+        endpoints.put(endpointCode, evaluatedEndpointDetails);
+
+        Map<String, Vars> evaluatedVars = requestDiffer.getVars();
+        vars.putAll(evaluatedVars);
     }
 }

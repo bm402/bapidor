@@ -109,8 +109,7 @@ public class RequestParser {
     public Privilege findPrivilege(String authHeaderValue) {
         if (authHeaderValue == null) {
             return Privilege.NONE;
-        }
-        if (authHeaderValue.contains(apiStore.getAuthDetails().getHighPrivilegedToken())) {
+        } else if (authHeaderValue.contains(apiStore.getAuthDetails().getHighPrivilegedToken())) {
             return Privilege.HIGH;
         } else if (authHeaderValue.contains(apiStore.getAuthDetails().getLowPrivilegedToken())) {
             return Privilege.LOW;
