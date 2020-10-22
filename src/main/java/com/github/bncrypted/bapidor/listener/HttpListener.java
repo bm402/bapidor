@@ -15,25 +15,27 @@ import java.net.URL;
 import java.util.Map;
 
 public class HttpListener implements IHttpListener {
+
+    private final ApiStore apiStore;
     private final IExtensionHelpers helpers;
     private final OutputStream stdout;
-
     private final RequestParser requestParser;
 
-    public HttpListener(IExtensionHelpers helpers,
+    public HttpListener(ApiStore apiStore,
+                        IExtensionHelpers helpers,
                         OutputStream stdout) {
 
+        this.apiStore = apiStore;
         this.helpers = helpers;
         this.stdout = stdout;
-
-        this.requestParser = new RequestParser();
+        this.requestParser = new RequestParser(apiStore);
     }
 
     public void processHttpMessage(int toolFlag,
                                    boolean messageIsRequest,
                                    IHttpRequestResponse messageInfo) {
 
-        if (ApiStore.INSTANCE.isListening() && messageIsRequest) {
+        if (apiStore.isListening() && messageIsRequest) {
             PrintWriter logger = new PrintWriter(stdout, true);
             IRequestInfo requestInfo = helpers.analyzeRequest(messageInfo);
             URL requestUrl = requestInfo.getUrl();
@@ -46,7 +48,7 @@ public class HttpListener implements IHttpListener {
                     messageInfo.getRequest(), requestInfo.getBodyOffset(), headers.get("Content-Type"));
 
             Privilege privilege = requestParser.findPrivilege(
-                    headers.get(ApiStore.INSTANCE.getAuthDetails().getHeaderName()));
+                    headers.get(apiStore.getAuthDetails().getHeaderName()));
             if (privilege == Privilege.NONE) {
                 logger.println("[Skipping] No token found for: " + requestInfo.getHeaders().get(0));
                 return;
@@ -62,7 +64,7 @@ public class HttpListener implements IHttpListener {
                     .build();
 
             String endpointCode = requestParser.getEndpointCode(method, path);
-            ApiStore.INSTANCE.addEndpointDetails(endpointCode, endpointDetails);
+            apiStore.addEndpointDetails(endpointCode, endpointDetails);
             logger.println("Wrote to store: " + requestInfo.getHeaders().get(0));
         }
     }

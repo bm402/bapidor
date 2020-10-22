@@ -1,5 +1,7 @@
 package com.github.bncrypted.bapidor.request;
 
+import com.github.bncrypted.bapidor.api.ApiStore;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -7,7 +9,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.UUID;
 
 public class RequestParserTest {
-    private final RequestParser requestParser = new RequestParser();
+
+    private static ApiStore apiStore;
+    private static RequestParser requestParser;
+
+    @BeforeAll
+    static void init() {
+        apiStore = new ApiStore();
+        requestParser = new RequestParser(apiStore);
+    }
 
     @Test
     void whenEndpointContainsNoUUIDsOrIntegers_thenNothingShouldBeRemoved() {

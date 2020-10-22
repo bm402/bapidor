@@ -11,6 +11,12 @@ import java.util.List;
 import java.util.Map;
 
 public class RequestParser {
+    
+    private final ApiStore apiStore;
+    
+    public RequestParser(ApiStore apiStore) {
+        this.apiStore = apiStore;
+    }
 
     public String getEndpointCode(String endpointMethod, String endpointName) {
         String[] endpointNameComponents = endpointName.split("/");
@@ -19,7 +25,7 @@ public class RequestParser {
         for (int i = 1; i < endpointNameComponents.length; i++) {
             sanitisedEndpointName.append("/");
 
-            if (ApiStore.INSTANCE.isCommonApiObject(endpointNameComponents[i])) {
+            if (apiStore.isCommonApiObject(endpointNameComponents[i])) {
                 sanitisedEndpointName.append(endpointNameComponents[i]);
             } else if (endpointNameComponents[i].contains(".") &&
                     isComponentWithSeparatorValid(endpointNameComponents[i], "\\.")) {
@@ -40,7 +46,7 @@ public class RequestParser {
         boolean isValid = false;
         String[] components = endpointComponent.split(separator);
         for (String component : components) {
-            if (ApiStore.INSTANCE.isCommonApiObject(component)) {
+            if (apiStore.isCommonApiObject(component)) {
                 isValid = true;
             }
         }
@@ -104,9 +110,9 @@ public class RequestParser {
         if (authHeaderValue == null) {
             return Privilege.NONE;
         }
-        if (authHeaderValue.contains(ApiStore.INSTANCE.getAuthDetails().getHighPrivilegedToken())) {
+        if (authHeaderValue.contains(apiStore.getAuthDetails().getHighPrivilegedToken())) {
             return Privilege.HIGH;
-        } else if (authHeaderValue.contains(ApiStore.INSTANCE.getAuthDetails().getLowPrivilegedToken())) {
+        } else if (authHeaderValue.contains(apiStore.getAuthDetails().getLowPrivilegedToken())) {
             return Privilege.LOW;
         }
         return Privilege.NONE;

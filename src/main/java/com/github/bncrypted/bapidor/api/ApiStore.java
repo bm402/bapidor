@@ -17,8 +17,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
-public enum ApiStore {
-    INSTANCE;
+public class ApiStore {
 
     @Setter
     private boolean isListening;
@@ -35,13 +34,12 @@ public enum ApiStore {
     private final AtomicInteger varId;
     private final Set<String> commonApiObjects;
 
-    ApiStore() {
+    public ApiStore() {
         isListening = false;
         vars = new HashMap<>();
         endpoints = new HashMap<>();
         commonApiObjects = loadCommonApiObjects();
         varId = new AtomicInteger(0);
-
     }
 
     public void addEndpointDetails(String endpointCode, EndpointDetails endpointDetails) {
