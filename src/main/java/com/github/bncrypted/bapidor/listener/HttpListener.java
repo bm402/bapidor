@@ -3,6 +3,7 @@ package com.github.bncrypted.bapidor.listener;
 import burp.IExtensionHelpers;
 import burp.IHttpListener;
 import burp.IHttpRequestResponse;
+import burp.IHttpService;
 import burp.IRequestInfo;
 import com.github.bncrypted.bapidor.api.ApiStore;
 import com.github.bncrypted.bapidor.model.EndpointDetails;
@@ -35,10 +36,13 @@ public class HttpListener implements IHttpListener {
                                    boolean messageIsRequest,
                                    IHttpRequestResponse messageInfo) {
 
-        if (apiStore.isListening() && messageIsRequest) {
-            PrintWriter logger = new PrintWriter(stdout, true);
+        String baseUri = getBaseUri(messageInfo.getHttpService());
+        if (apiStore.isListening() && messageIsRequest && baseUri.equals(apiStore.getBaseUri())) {
             IRequestInfo requestInfo = helpers.analyzeRequest(messageInfo);
             URL requestUrl = requestInfo.getUrl();
+
+            PrintWriter logger = new PrintWriter(stdout, true);
+            logger.println("Incoming request: " + requestInfo.getHeaders().get(0));
 
             String method = requestInfo.getMethod();
             String path = requestUrl.getPath();
@@ -67,5 +71,18 @@ public class HttpListener implements IHttpListener {
             apiStore.addEndpointDetails(endpointCode, endpointDetails);
             logger.println("Wrote to store: " + requestInfo.getHeaders().get(0));
         }
+    }
+
+    private String getBaseUri(IHttpService httpService) {
+        StringBuilder baseUri = new StringBuilder();
+        baseUri.append(httpService.getProtocol());
+        baseUri.append("://");
+        baseUri.append(httpService.getHost());
+        int port = httpService.getPort();
+        if (port != 0 && port != 80 && port != 443) {
+            baseUri.append(":");
+            baseUri.append(port);
+        }
+        return baseUri.toString();
     }
 }
