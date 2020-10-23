@@ -25,6 +25,9 @@ public class SuiteTab implements ITab {
 
     private JPanel createGui() {
 
+        // main panel
+        JPanel mainPnl = new JPanel();
+
         // labels
         JLabel baseUriLbl = new JLabel("Base URI:");
         JLabel authHeaderNameLbl = new JLabel("Auth header name:");
@@ -42,7 +45,7 @@ public class SuiteTab implements ITab {
         // buttons
         JToggleButton activatedBtn = new JToggleButton("Start");
         JButton saveBtn = new JButton("Save");
-        JToggleButton resetBtn = new JToggleButton("Reset");
+        JButton resetBtn = new JButton("Reset");
 
         // button functionality
         activatedBtn.addChangeListener(e -> {
@@ -63,19 +66,26 @@ public class SuiteTab implements ITab {
             }
         });
 
-        resetBtn.addChangeListener(e -> {
-            if (resetBtn.isSelected()) {
-                resetBtn.setText("Are you sure?");
-            } else {
-                resetBtn.setText("Reset");
+        resetBtn.addActionListener(e -> {
+            int result = JOptionPane.showConfirmDialog(mainPnl,"Are you sure?",
+                    "Reset", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if (result == JOptionPane.YES_OPTION) {
                 activatedBtn.setSelected(false);
                 apiStore.reset();
             }
         });
 
-        // populate main panel
-        JPanel mainPnl = new JPanel();
+        saveBtn.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Save");
+            int selection = chooser.showSaveDialog(mainPnl);
+            if (selection == JFileChooser.APPROVE_OPTION) {
+                System.out.println("Saved");
+                apiStore.save(chooser.getSelectedFile().getAbsolutePath());
+            }
+        });
 
+        // populate main panel
         GroupLayout layout = new GroupLayout(mainPnl);
         mainPnl.setLayout(layout);
         layout.setAutoCreateContainerGaps(true);
