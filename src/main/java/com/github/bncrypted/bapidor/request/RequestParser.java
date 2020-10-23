@@ -9,15 +9,48 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class RequestParser {
+    
+    private final ApiStore apiStore;
+    
+    public RequestParser(ApiStore apiStore) {
+        this.apiStore = apiStore;
+    }
 
     public String getEndpointCode(String endpointMethod, String endpointName) {
-        endpointName = removeUUIDsFromEndpointName(endpointName);
-        endpointName = removeIntegersFromEndpointName(endpointName);
-        return endpointMethod + endpointName;
+        String[] endpointNameComponents = endpointName.split("/");
+        StringBuilder sanitisedEndpointName = new StringBuilder();
+
+        for (int i = 1; i < endpointNameComponents.length; i++) {
+            sanitisedEndpointName.append("/");
+
+            if (apiStore.isCommonApiObject(endpointNameComponents[i])) {
+                sanitisedEndpointName.append(endpointNameComponents[i]);
+            } else if (endpointNameComponents[i].contains(".") &&
+                    isComponentWithSeparatorValid(endpointNameComponents[i], "\\.")) {
+                sanitisedEndpointName.append(endpointNameComponents[i]);
+            } else if (endpointNameComponents[i].contains("-") &&
+                    isComponentWithSeparatorValid(endpointNameComponents[i], "-")) {
+                sanitisedEndpointName.append(endpointNameComponents[i]);
+            } else if (endpointNameComponents[i].contains("_") &&
+                    isComponentWithSeparatorValid(endpointNameComponents[i], "_")) {
+                sanitisedEndpointName.append(endpointNameComponents[i]);
+            }
+        }
+
+        return endpointMethod + sanitisedEndpointName.toString();
+    }
+
+    private boolean isComponentWithSeparatorValid(String endpointComponent, String separator) {
+        boolean isValid = false;
+        String[] components = endpointComponent.split(separator);
+        for (String component : components) {
+            if (apiStore.isCommonApiObject(component)) {
+                isValid = true;
+            }
+        }
+        return isValid;
     }
 
     public Map<String, String> parseHeaders(List<String> headersList) {
@@ -76,10 +109,9 @@ public class RequestParser {
     public Privilege findPrivilege(String authHeaderValue) {
         if (authHeaderValue == null) {
             return Privilege.NONE;
-        }
-        if (authHeaderValue.contains(ApiStore.INSTANCE.getAuthDetails().getHighPrivilegedToken())) {
+        } else if (authHeaderValue.contains(apiStore.getAuthDetails().getHighPrivilegedToken())) {
             return Privilege.HIGH;
-        } else if (authHeaderValue.contains(ApiStore.INSTANCE.getAuthDetails().getLowPrivilegedToken())) {
+        } else if (authHeaderValue.contains(apiStore.getAuthDetails().getLowPrivilegedToken())) {
             return Privilege.LOW;
         }
         return Privilege.NONE;
@@ -88,41 +120,5 @@ public class RequestParser {
     @SuppressWarnings("unchecked")
     private Map<String, Object> parseJsonBodyParams(byte[] body) throws IOException {
         return new ObjectMapper().readValue(body, Map.class);
-    }
-
-    private String removeUUIDsFromEndpointName(String endpointName) {
-        StringBuilder endpointNameWithoutUUIDs = new StringBuilder();
-        int stringBuilderStartIndex = 0;
-        int matcherStartIndex = 0;
-
-        Pattern pattern = Pattern.compile("([a-f0-9]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8})",
-                Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(endpointName);
-
-        while (matcher.find(matcherStartIndex)) {
-            int curMatcherIndex = matcher.start();
-            endpointNameWithoutUUIDs.append(
-                    endpointName, stringBuilderStartIndex, curMatcherIndex);
-            stringBuilderStartIndex = curMatcherIndex + 36;
-            matcherStartIndex = curMatcherIndex + 36;
-        }
-
-        if (stringBuilderStartIndex < endpointName.length()) {
-            endpointNameWithoutUUIDs.append(
-                    endpointName, stringBuilderStartIndex, endpointName.length());
-        }
-
-        return endpointNameWithoutUUIDs.toString();
-    }
-
-    private String removeIntegersFromEndpointName(String endpointName) {
-        StringBuilder endpointNameWithoutIntegers = new StringBuilder();
-        for (int i = 0; i < endpointName.length(); i++) {
-            char curChar = endpointName.charAt(i);
-            if (curChar - '0' < 0 || curChar - '0' > 9) {
-                endpointNameWithoutIntegers.append(curChar);
-            }
-        }
-        return endpointNameWithoutIntegers.toString();
     }
 }

@@ -1,5 +1,7 @@
 package com.github.bncrypted.bapidor.request;
 
+import com.github.bncrypted.bapidor.api.ApiStore;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -7,7 +9,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.UUID;
 
 public class RequestParserTest {
-    private final RequestParser requestParser = new RequestParser();
+
+    private static ApiStore apiStore;
+    private static RequestParser requestParser;
+
+    @BeforeAll
+    static void init() {
+        apiStore = new ApiStore();
+        requestParser = new RequestParser(apiStore);
+    }
 
     @Test
     void whenEndpointContainsNoUUIDsOrIntegers_thenNothingShouldBeRemoved() {
@@ -71,6 +81,50 @@ public class RequestParserTest {
         String path = "/org/52/user/" + UUID.randomUUID().toString();
 
         String expectedEndpointCode = "GET/org//user/";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
+
+    @Test
+    void whenEndpointContainsUsername_thenShouldBeRemoved() {
+        String method = "PATCH";
+        String path = "/user/bncrypted/delete";
+
+        String expectedEndpointCode = "PATCH/user//delete";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
+
+    @Test
+    void whenEndpointContainsFilename_thenShouldNotBeRemoved() {
+        String method = "PUT";
+        String path = "/file/bncrypted.json/delete";
+
+        String expectedEndpointCode = "PUT/file/bncrypted.json/delete";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
+
+    @Test
+    void whenEndpointContainsObjectWithDashSeparator_thenShouldNotBeRemoved() {
+        String method = "GET";
+        String path = "/component-v1/info";
+
+        String expectedEndpointCode = "GET/component-v1/info";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
+
+    @Test
+    void whenEndpointContainsObjectWithUnderscoreSeparator_thenShouldNotBeRemoved() {
+        String method = "GET";
+        String path = "/component_v1/info";
+
+        String expectedEndpointCode = "GET/component_v1/info";
         String actualEndpointCode = requestParser.getEndpointCode(method, path);
 
         assertEquals(expectedEndpointCode, actualEndpointCode);

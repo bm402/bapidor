@@ -8,6 +8,12 @@ import javax.swing.*;
 import java.awt.*;
 
 public class SuiteTab implements ITab {
+    
+    private final ApiStore apiStore;
+    
+    public SuiteTab(ApiStore apiStore) {
+        this.apiStore = apiStore;
+    }
 
     public String getTabCaption() {
         return "bapidor";
@@ -42,18 +48,18 @@ public class SuiteTab implements ITab {
         activatedBtn.addChangeListener(e -> {
             if (activatedBtn.isSelected()) {
                 activatedBtn.setText("Stop");
-                ApiStore.INSTANCE.setBaseUri(baseUriTf.getText());
+                apiStore.setBaseUri(baseUriTf.getText());
                 AuthDetails authDetails = AuthDetails.builder()
                         .headerName(authHeaderNameTf.getText())
                         .headerValuePrefix(authHeaderValuePrefixTf.getText())
                         .highPrivilegedToken(highPrivilegeTokenTf.getText())
                         .lowPrivilegedToken(lowPrivilegeTokenTf.getText())
                         .build();
-                ApiStore.INSTANCE.setAuthDetails(authDetails);
-                ApiStore.INSTANCE.setListening(true);
+                apiStore.setAuthDetails(authDetails);
+                apiStore.setListening(true);
             } else {
                 activatedBtn.setText("Start");
-                ApiStore.INSTANCE.setListening(false);
+                apiStore.setListening(false);
             }
         });
 
@@ -63,7 +69,7 @@ public class SuiteTab implements ITab {
             } else {
                 resetBtn.setText("Reset");
                 activatedBtn.setSelected(false);
-                ApiStore.INSTANCE.reset();
+                apiStore.reset();
             }
         });
 
