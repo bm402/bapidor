@@ -6,17 +6,16 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Map;
 import java.util.UUID;
 
 public class RequestParserTest {
 
-    private static ApiStore apiStore;
     private static RequestParser requestParser;
 
     @BeforeAll
     static void init() {
-        apiStore = new ApiStore();
-        requestParser = new RequestParser(apiStore);
+        requestParser = new RequestParser(new ApiStore());
     }
 
     @Test
@@ -128,5 +127,111 @@ public class RequestParserTest {
         String actualEndpointCode = requestParser.getEndpointCode(method, path);
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
+
+    @Test
+    void whenRequestContainsRequestParams_thenShouldReturnRequestParamsMap() {
+        String requestParamsStr = "user=bncrypted&org=equals=equals&isadmin";
+
+        Map<String, String> expectedBodyParams = Map.of(
+                "user", "bncrypted",
+                "org", "equals=equals",
+                "isadmin", ""
+        );
+        Map<String, String> actualBodyParams = requestParser.parseRequestParams(requestParamsStr);
+
+        assertEquals(expectedBodyParams, actualBodyParams);
+    }
+
+    @Test
+    void whenRequestContainsNoRequestParams_thenShouldReturnEmptyRequestParamsMap() {
+        String requestParamsStr = "";
+
+        Map<String, String> expectedBodyParams = Map.of();
+        Map<String, String> actualBodyParams = requestParser.parseRequestParams(requestParamsStr);
+
+        assertEquals(expectedBodyParams, actualBodyParams);
+    }
+
+    @Test
+    void whenRequestContainsNoContentTypeAndNoBody_thenShouldReturnEmptyBodyParams() {
+        byte[] body = "".getBytes();
+
+        Map<String, Object> expectedBodyParams = Map.of();
+        Map<String, Object> actualBodyParams = requestParser.parseBodyParams(body, 0, null);
+
+        assertEquals(expectedBodyParams, actualBodyParams);
+    }
+
+    @Test
+    void whenRequestContainsNoContentTypeButHasABody_thenShouldReturnBodyParamsWithDataEntry() {
+        String data = UUID.randomUUID().toString();
+        byte[] body = data.getBytes();
+
+        Map<String, Object> expectedBodyParams = Map.of("data", data);
+        Map<String, Object> actualBodyParams = requestParser.parseBodyParams(body, 0, null);
+
+        assertEquals(expectedBodyParams, actualBodyParams);
+    }
+
+    @Test
+    void whenRequestContainsJsonContentType_thenShouldReturnBodyParamsWithJsonParams() {
+        String data = "{\"user\":\"bncrypted\"}";
+        byte[] body = data.getBytes();
+
+        Map<String, Object> expectedBodyParams = Map.of("user", "bncrypted");
+        Map<String, Object> actualBodyParams = requestParser.parseBodyParams(body, 0, "application/json");
+
+        assertEquals(expectedBodyParams, actualBodyParams);
+    }
+
+    @Test
+    void whenRequestContainsJsonContentTypeButNoBody_thenShouldReturnEmptyBodyParams() {
+        String data = "";
+        byte[] body = data.getBytes();
+
+        Map<String, Object> expectedBodyParams = Map.of();
+        Map<String, Object> actualBodyParams = requestParser.parseBodyParams(body, 0, "application/json");
+
+        assertEquals(expectedBodyParams, actualBodyParams);
+    }
+
+    @Test
+    void whenRequestContainsFormDataContentType_thenShouldReturnBodyParamsWithFormDataParams() {
+        String data = "user=bncrypted&org=equals=equals&isadmin";
+        byte[] body = data.getBytes();
+
+        Map<String, Object> expectedBodyParams = Map.of(
+                "user", "bncrypted",
+                "org", "equals=equals",
+                "isadmin", ""
+        );
+        Map<String, Object> actualBodyParams = requestParser.parseBodyParams(body, 0,
+                "application/x-www-form-urlencoded");
+
+        assertEquals(expectedBodyParams, actualBodyParams);
+    }
+
+    @Test
+    void whenRequestContainsFormDataContentTypeButNoBody_thenShouldReturnEmptyBodyParams() {
+        String data = "";
+        byte[] body = data.getBytes();
+
+        Map<String, Object> expectedBodyParams = Map.of();
+        Map<String, Object> actualBodyParams = requestParser.parseBodyParams(body, 0,
+                "application/x-www-form-urlencoded");
+
+        assertEquals(expectedBodyParams, actualBodyParams);
+    }
+
+    @Test
+    void whenRequestContainsAnUnknownContentType_thenShouldReturnBodyParamsWithDataEntry() {
+        String data = UUID.randomUUID().toString();
+        byte[] body = data.getBytes();
+
+        Map<String, Object> expectedBodyParams = Map.of("data", data);
+        Map<String, Object> actualBodyParams = requestParser.parseBodyParams(body, 0, "application/custom");
+
+        assertEquals(expectedBodyParams, actualBodyParams);
     }
 }
