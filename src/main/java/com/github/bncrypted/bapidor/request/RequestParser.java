@@ -5,6 +5,7 @@ import com.github.bncrypted.bapidor.api.ApiStore;
 import com.github.bncrypted.bapidor.model.Privilege;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -70,7 +71,7 @@ public class RequestParser {
 
     public Map<String, String> parseRequestParams(String requestParamsStr) {
         Map<String, String> requestParams = new HashMap<>();
-        if (requestParamsStr == null) {
+        if (requestParamsStr == null || requestParamsStr.equals("")) {
             return requestParams;
         }
 
@@ -79,28 +80,37 @@ public class RequestParser {
             String[] paramComponents = paramPair.split("=");
             if (paramComponents.length == 2) {
                 requestParams.put(paramComponents[0], paramComponents[1]);
-            } else {
+            } else if (paramComponents.length == 1) {
                 requestParams.put(paramComponents[0], "");
+            } else {
+                StringBuilder paramValue = new StringBuilder();
+                for (int i = 1; i < paramComponents.length; i++) {
+                    paramValue.append(paramComponents[i]);
+                    paramValue.append("=");
+                }
+                paramValue.setLength(paramValue.length() - 1);
+                requestParams.put(paramComponents[0], paramValue.toString());
             }
         }
         return requestParams;
     }
 
     public Map<String, Object> parseBodyParams(byte[] request, int bodyOffset, String contentType) {
-        Map<String, Object> bodyParams = new HashMap<>();
-        if (contentType == null) {
-            return bodyParams;
-        }
+        Map<String, Object> bodyParams;
         byte[] body = Arrays.copyOfRange(request, bodyOffset, request.length);
 
-        switch (contentType) {
-            case "application/json":
-                try {
-                    bodyParams = parseJsonBodyParams(body);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-                break;
+        if (contentType == null) {
+            if (body.length == 0) {
+                bodyParams = Map.of();
+            } else {
+                bodyParams = parseUnknownTypeBodyParams(body);
+            }
+        } else if (contentType.contains("application/json")) {
+            bodyParams = parseJsonBodyParams(body);
+        } else if (contentType.contains("application/x-www-form-urlencoded")) {
+            bodyParams = parseFormDataBodyParams(body);
+        } else {
+            bodyParams = parseUnknownTypeBodyParams(body);
         }
 
         return bodyParams;
@@ -118,7 +128,48 @@ public class RequestParser {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> parseJsonBodyParams(byte[] body) throws IOException {
-        return new ObjectMapper().readValue(body, Map.class);
+    private Map<String, Object> parseJsonBodyParams(byte[] body) {
+        Map<String, Object> bodyParams;
+        if (body.length == 0) {
+            return Map.of();
+        }
+        try {
+            bodyParams = new ObjectMapper().readValue(body, Map.class);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        return bodyParams;
+    }
+
+    private Map<String, Object> parseFormDataBodyParams(byte[] body) {
+        Map<String, Object> bodyParams = new HashMap<>();
+        if (body.length == 0) {
+            return bodyParams;
+        }
+
+        String bodyStr = new String(body, StandardCharsets.UTF_8);
+        String[] params = bodyStr.split("&");
+        for (String param : params) {
+            String[] paramComponents = param.split("=");
+            if (paramComponents.length == 2) {
+                bodyParams.put(paramComponents[0], paramComponents[1]);
+            } else if (paramComponents.length == 1) {
+                bodyParams.put(paramComponents[0], "");
+            } else {
+                StringBuilder paramValue = new StringBuilder();
+                for (int i = 1; i < paramComponents.length; i++) {
+                    paramValue.append(paramComponents[i]);
+                    paramValue.append("=");
+                }
+                paramValue.setLength(paramValue.length() - 1);
+                bodyParams.put(paramComponents[0], paramValue.toString());
+            }
+        }
+
+        return bodyParams;
+    }
+
+    private Map<String, Object> parseUnknownTypeBodyParams(byte[] body) {
+        return Map.of("data", new String(body, StandardCharsets.UTF_8));
     }
 }
