@@ -1,0 +1,12 @@
+---
+base: "https://test.com"
+auth:
+  header_name: "Authorization"
+  header_value_prefix: "Bearer"
+  high_privileged_access_token: "hi"
+  low_privileged_access_token: "lo"
+vars: {}
+api:
+  methods: null
+  headers: null
+  endpoints: {}

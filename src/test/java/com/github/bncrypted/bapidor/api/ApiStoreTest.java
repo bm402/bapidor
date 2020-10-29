@@ -82,6 +82,48 @@ public class ApiStoreTest {
         assertTrue(areFilesEqual("apistoretest2/unevaluated_expected.yml", "apistoretest2/test.unevaluated.yml"));
     }
 
+    @Test
+    void apistoretest3_whenSavingStaticEndpoints_thenShouldNotBeSavedInEvaluatedFile() {
+        EndpointDetails endpointDetails1 = EndpointDetails.builder()
+                .method("GET")
+                .path("/users/me")
+                .headers(Map.of("Authorization", "Bearer hi"))
+                .requestParams(Map.of())
+                .bodyParams(Map.of())
+                .privilege(Privilege.HIGH)
+                .isEvaluated(false)
+                .build();
+
+        EndpointDetails endpointDetails2 = EndpointDetails.builder()
+                .method("GET")
+                .path("/users/me")
+                .headers(Map.of("Authorization", "Bearer lo"))
+                .requestParams(Map.of())
+                .bodyParams(Map.of())
+                .privilege(Privilege.LOW)
+                .build();
+
+        EndpointDetails endpointDetails3 = EndpointDetails.builder()
+                .method("GET")
+                .path("/org/456")
+                .headers(Map.of("Authorization", "Bearer lo"))
+                .requestParams(Map.of())
+                .bodyParams(Map.of())
+                .privilege(Privilege.LOW)
+                .build();
+
+        apiStore.addEndpointDetails("GET/users/", endpointDetails1);
+        apiStore.addEndpointDetails("GET/users/", endpointDetails2);
+        apiStore.addEndpointDetails("GET/org/", endpointDetails3);
+
+        ClassLoader classLoader = ApiStore.class.getClassLoader();
+        String evaluatedSaveFile = classLoader.getResource("apistoretest3/test.yml").getPath();
+        apiStore.save(evaluatedSaveFile);
+
+        assertTrue(areFilesEqual("apistoretest3/evaluated_expected.yml", "apistoretest3/test.yml"));
+        assertTrue(areFilesEqual("apistoretest3/unevaluated_expected.yml", "apistoretest3/test.unevaluated.yml"));
+    }
+
     private boolean areFilesEqual(String file1, String file2) {
         ClassLoader classLoader = ApiStore.class.getClassLoader();
         try (InputStream inputStream1 = classLoader.getResourceAsStream(file1);
