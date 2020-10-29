@@ -124,7 +124,7 @@ public class RequestDiffer {
                             (Map<String, Object>)lowPrivilegedValue));
                 } else if (objectClass.equals(List.class)) {
                     listWithVarIds.add(createListWithVarIds((List<Object>)highPrivilegedValue,
-                                (List<Object>)lowPrivilegedValue));
+                            (List<Object>)lowPrivilegedValue));
                 } else {
                     if (highPrivilegedValue.equals(lowPrivilegedValue)) {
                         listWithVarIds.add(highPrivilegedValue);

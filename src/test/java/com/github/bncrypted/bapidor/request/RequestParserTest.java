@@ -1,11 +1,13 @@
 package com.github.bncrypted.bapidor.request;
 
+import burp.IParameter;
 import com.github.bncrypted.bapidor.api.ApiStore;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,8 +25,8 @@ public class RequestParserTest {
         String method = "GET";
         String path = "/user/me";
 
-        String expectedEndpointCode = "GET/user/me";
-        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+        String expectedEndpointCode = "GET|/user/me||";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, List.of());
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
@@ -34,8 +36,8 @@ public class RequestParserTest {
         String method = "GET";
         String path = "/user/" + UUID.randomUUID().toString();
 
-        String expectedEndpointCode = "GET/user/";
-        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+        String expectedEndpointCode = "GET|/user/||";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, List.of());
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
@@ -46,8 +48,8 @@ public class RequestParserTest {
         String path = "/org/" + UUID.randomUUID().toString() +
                 "/user/" + UUID.randomUUID().toString() + "/delete";
 
-        String expectedEndpointCode = "POST/org//user//delete";
-        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+        String expectedEndpointCode = "POST|/org//user//delete||";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, List.of());
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
@@ -57,8 +59,8 @@ public class RequestParserTest {
         String method = "GET";
         String path = "/user/1";
 
-        String expectedEndpointCode = "GET/user/";
-        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+        String expectedEndpointCode = "GET|/user/||";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, List.of());
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
@@ -68,8 +70,8 @@ public class RequestParserTest {
         String method = "POST";
         String path = "/org/12/user/425/delete";
 
-        String expectedEndpointCode = "POST/org//user//delete";
-        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+        String expectedEndpointCode = "POST|/org//user//delete||";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, List.of());
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
@@ -79,8 +81,8 @@ public class RequestParserTest {
         String method = "GET";
         String path = "/org/52/user/" + UUID.randomUUID().toString();
 
-        String expectedEndpointCode = "GET/org//user/";
-        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+        String expectedEndpointCode = "GET|/org//user/||";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, List.of());
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
@@ -90,8 +92,8 @@ public class RequestParserTest {
         String method = "PATCH";
         String path = "/user/bncrypted/delete";
 
-        String expectedEndpointCode = "PATCH/user//delete";
-        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+        String expectedEndpointCode = "PATCH|/user//delete||";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, List.of());
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
@@ -101,8 +103,8 @@ public class RequestParserTest {
         String method = "PUT";
         String path = "/file/bncrypted.json/delete";
 
-        String expectedEndpointCode = "PUT/file/bncrypted.json/delete";
-        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+        String expectedEndpointCode = "PUT|/file/bncrypted.json/delete||";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, List.of());
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
@@ -112,8 +114,8 @@ public class RequestParserTest {
         String method = "GET";
         String path = "/component-v1/info";
 
-        String expectedEndpointCode = "GET/component-v1/info";
-        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+        String expectedEndpointCode = "GET|/component-v1/info||";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, List.of());
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
@@ -123,8 +125,48 @@ public class RequestParserTest {
         String method = "GET";
         String path = "/component_v1/info";
 
-        String expectedEndpointCode = "GET/component_v1/info";
-        String actualEndpointCode = requestParser.getEndpointCode(method, path);
+        String expectedEndpointCode = "GET|/component_v1/info||";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, List.of());
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
+
+    @Test
+    void whenRequestContainsRequestParams_thenEndpointCodeShouldContainRequestParamNames() {
+        String method = "POST";
+        String path = "/component/info";
+        List<IParameter> params = List.of(new RequestParameter(IParameter.PARAM_URL, "User"),
+                new RequestParameter(IParameter.PARAM_URL, "Org"));
+
+        String expectedEndpointCode = "POST|/component/info|orguser|";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, params);
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
+
+    @Test
+    void whenRequestContainsBodyParams_thenEndpointCodeShouldContainBodyParamNames() {
+        String method = "POST";
+        String path = "/component/info";
+        List<IParameter> params = List.of(new RequestParameter(IParameter.PARAM_BODY, "User"),
+                new RequestParameter(IParameter.PARAM_JSON, "Org"));
+
+        String expectedEndpointCode = "POST|/component/info||orguser";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, params);
+
+        assertEquals(expectedEndpointCode, actualEndpointCode);
+    }
+
+    @Test
+    void whenRequestContainsMixedParams_thenEndpointCodeShouldContainRequestAndBodyParamNamesSeparately() {
+        String method = "POST";
+        String path = "/component/info";
+        List<IParameter> params = List.of(new RequestParameter(IParameter.PARAM_BODY, "User"),
+                new RequestParameter(IParameter.PARAM_JSON, "Org"),
+                new RequestParameter(IParameter.PARAM_URL, "Admin"));
+
+        String expectedEndpointCode = "POST|/component/info|admin|orguser";
+        String actualEndpointCode = requestParser.getEndpointCode(method, path, params);
 
         assertEquals(expectedEndpointCode, actualEndpointCode);
     }
@@ -233,5 +275,43 @@ public class RequestParserTest {
         Map<String, Object> actualBodyParams = requestParser.parseBodyParams(body, 0, "application/custom");
 
         assertEquals(expectedBodyParams, actualBodyParams);
+    }
+
+    private static class RequestParameter implements IParameter {
+        private final byte type;
+        private final String name;
+
+        public RequestParameter(byte type, String name) {
+            this.type = type;
+            this.name = name;
+        }
+
+        public byte getType() {
+            return type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getValue() {
+            return "";
+        }
+
+        public int getNameStart() {
+            return 0;
+        }
+
+        public int getNameEnd() {
+            return 0;
+        }
+
+        public int getValueStart() {
+            return 0;
+        }
+
+        public int getValueEnd() {
+            return 0;
+        }
     }
 }
