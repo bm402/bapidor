@@ -14,32 +14,46 @@ import com.github.bncrypted.bapidor.request.RequestParser;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class HttpListener implements IHttpListener {
 
-    private final ApiStore apiStore;
+    private final Map<String, ApiStore> apiStores;
     private final IExtensionHelpers helpers;
     private final OutputStream stdout;
-    private final RequestParser requestParser;
+    private final Map<String, RequestParser> requestParsers;
 
-    public HttpListener(ApiStore apiStore,
+    public HttpListener(Map<String, ApiStore> apiStores,
                         IExtensionHelpers helpers,
                         OutputStream stdout) {
 
-        this.apiStore = apiStore;
+        this.apiStores = apiStores;
         this.helpers = helpers;
         this.stdout = stdout;
-        this.requestParser = new RequestParser(apiStore);
+        this.requestParsers = new HashMap<>();
     }
 
     public void processHttpMessage(int toolFlag,
                                    boolean messageIsRequest,
                                    IHttpRequestResponse messageInfo) {
 
+        if (!messageIsRequest) {
+            return;
+        }
+
         String baseUri = getBaseUri(messageInfo.getHttpService());
-        if (apiStore.isListening() && messageIsRequest && baseUri.equals(apiStore.getBaseUri())) {
+        ApiStore apiStore = apiStores.get(baseUri);
+
+        if (apiStore != null && apiStore.isListening()) {
+
+            RequestParser requestParser = requestParsers.get(baseUri);
+            if (requestParser == null) {
+                requestParser = new RequestParser(apiStore);
+                requestParsers.put(baseUri, requestParser);
+            }
+
             IRequestInfo requestInfo = helpers.analyzeRequest(messageInfo);
             URL requestUrl = requestInfo.getUrl();
 
