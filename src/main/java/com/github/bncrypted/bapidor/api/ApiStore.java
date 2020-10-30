@@ -101,7 +101,13 @@ public class ApiStore {
 
         ExportedDefinition unevaluatedDefinition = addUnevaluatedEndpointsToDefinition(baseDefinition);
         String[] filepathComponents = filepath.split("\\.");
-        String unevaluatedFilepath = filepathComponents[0] + ".unevaluated." + filepathComponents[1];
+        StringBuilder filename = new StringBuilder();
+        for (int i = 0; i < filepathComponents.length - 1; i++) {
+            filename.append(filepathComponents[i]);
+            filename.append(".");
+        }
+        String unevaluatedFilepath = filename.toString() + "unevaluated." +
+                filepathComponents[filepathComponents.length-1];
 
         try {
             mapper.writeValue(new File(unevaluatedFilepath), unevaluatedDefinition);
