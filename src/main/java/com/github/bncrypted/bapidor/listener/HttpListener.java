@@ -4,6 +4,7 @@ import burp.IExtensionHelpers;
 import burp.IHttpListener;
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
+import burp.IParameter;
 import burp.IRequestInfo;
 import com.github.bncrypted.bapidor.api.ApiStore;
 import com.github.bncrypted.bapidor.model.EndpointDetails;
@@ -13,6 +14,7 @@ import com.github.bncrypted.bapidor.request.RequestParser;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 public class HttpListener implements IHttpListener {
@@ -67,7 +69,9 @@ public class HttpListener implements IHttpListener {
                     .privilege(privilege)
                     .build();
 
-            String endpointCode = requestParser.getEndpointCode(method, path);
+            List<IParameter> allParams = requestInfo.getParameters();
+            String endpointCode = requestParser.getEndpointCode(method, path, allParams);
+
             apiStore.addEndpointDetails(endpointCode, endpointDetails);
             logger.println("Wrote to store: " + requestInfo.getHeaders().get(0));
         }

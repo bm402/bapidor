@@ -16,4 +16,6 @@ public class EndpointDetails {
     private final Privilege privilege;
     @Builder.Default
     private boolean isEvaluated = false;
+    @Builder.Default
+    private boolean isStatic = false;
 }

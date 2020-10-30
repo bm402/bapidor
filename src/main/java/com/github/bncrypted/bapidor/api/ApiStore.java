@@ -139,7 +139,7 @@ public class ApiStore {
     private ExportedDefinition addEvaluatedEndpointsToDefinition(ExportedDefinition definition) {
         Map<String, List<ExportedEndpointDetails>> exportedEndpoints = new HashMap<>();
         endpoints.forEach((endpointCode, endpointDetails) -> {
-            if (endpointDetails.isEvaluated()) {
+            if (endpointDetails.isEvaluated() && !endpointDetails.isStatic()) {
 
                 String endpoint = endpointDetails.getPath();
                 if (!exportedEndpoints.containsKey(endpoint)) {
@@ -254,9 +254,13 @@ public class ApiStore {
                 .isEvaluated(true)
                 .build();
 
-        endpoints.put(endpointCode, evaluatedEndpointDetails);
-
         Map<String, Vars> evaluatedVars = requestDiffer.getVars();
-        vars.putAll(evaluatedVars);
+        if (evaluatedVars.size() == 0) {
+            evaluatedEndpointDetails.setStatic(true);
+        } else {
+            vars.putAll(evaluatedVars);
+        }
+
+        endpoints.put(endpointCode, evaluatedEndpointDetails);
     }
 }

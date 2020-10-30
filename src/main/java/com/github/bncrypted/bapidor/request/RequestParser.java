@@ -1,12 +1,15 @@
 package com.github.bncrypted.bapidor.request;
 
+import burp.IParameter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.bncrypted.bapidor.api.ApiStore;
 import com.github.bncrypted.bapidor.model.Privilege;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +22,7 @@ public class RequestParser {
         this.apiStore = apiStore;
     }
 
-    public String getEndpointCode(String endpointMethod, String endpointName) {
+    public String getEndpointCode(String endpointMethod, String endpointName, List<IParameter> params) {
         String[] endpointNameComponents = endpointName.split("/");
         StringBuilder sanitisedEndpointName = new StringBuilder();
 
@@ -40,7 +43,21 @@ public class RequestParser {
             }
         }
 
-        return endpointMethod + sanitisedEndpointName.toString();
+        List<String> requestParamNames = new ArrayList<>();
+        List<String> bodyParamNames = new ArrayList<>();
+        params.forEach(param -> {
+            if (param.getType() == IParameter.PARAM_URL) {
+                requestParamNames.add(param.getName());
+            } else if (param.getType() == IParameter.PARAM_BODY || param.getType() == IParameter.PARAM_JSON) {
+                bodyParamNames.add(param.getName());
+            }
+        });
+
+        String requestParamsCode = convertParamNamesToString(requestParamNames);
+        String bodyParamsCode = convertParamNamesToString(bodyParamNames);
+
+        return endpointMethod + "|" + sanitisedEndpointName.toString() + "|" +
+                requestParamsCode + "|" + bodyParamsCode;
     }
 
     private boolean isComponentWithSeparatorValid(String endpointComponent, String separator) {
@@ -52,6 +69,13 @@ public class RequestParser {
             }
         }
         return isValid;
+    }
+
+    private String convertParamNamesToString(List<String> paramNames) {
+        Collections.sort(paramNames);
+        StringBuilder str = new StringBuilder();
+        paramNames.forEach(param -> str.append(param.toLowerCase()));
+        return str.toString();
     }
 
     public Map<String, String> parseHeaders(List<String> headersList) {
